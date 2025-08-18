@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.goldenowl</groupId>
-	<artifactId>spring-boot-template</artifactId>
+	<artifactId>ticket-booking-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>Spring Boot Template</name>
 	<description>Spring Boot template project</description>
