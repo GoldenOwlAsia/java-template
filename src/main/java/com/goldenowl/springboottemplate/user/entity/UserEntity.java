@@ -48,6 +48,10 @@ public class UserEntity extends BaseEntity {
     @Column
     private String oauthId;
 
+    /**
+     * TODO: Review and change the fetch strategy of {@code roles} from EAGER to LAZY
+     * to avoid unnecessary data loading and potential performance overhead.
+     */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "GO_USER_ROLES",
@@ -56,6 +60,10 @@ public class UserEntity extends BaseEntity {
     )
     private Set<RoleEntity> roles;
 
+    /**
+     * TODO: Remove this association after fully merging the sign-up flow
+     * into {@code UserEntity} and completing data migration.
+     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sign_up_id")
     private SignUpEntity signUp;

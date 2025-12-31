@@ -16,6 +16,19 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * @deprecated This entity is deprecated and will be removed in future versions.
+ *
+ * This class was originally introduced to separate the Sign-Up flow from the User domain
+ * in order to handle verification, temporary credentials, and onboarding logic independently.
+ *
+ * Due to increasing complexity and overlap between SignUpEntity and UserEntity,
+ * the sign-up data and lifecycle are now merged into the User entity to simplify
+ * the domain model and reduce duplication.
+ *
+ * Please use {@code UserEntity} for all new implementations.
+ */
+@Deprecated
 @Entity
 @Table(name = "GO_SIGN_UP")
 @Getter

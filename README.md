@@ -21,6 +21,9 @@
 
 This monolithic backend service supports authentication, caching, mailing, and data persistence for a scalable web application. It is built on Spring Boot 3 with a focus on security, modularity, and clean architecture principles.
 
+The project is currently organized using a package-by-feature structure to improve modularity and feature ownership.
+If simplicity is preferred, the structure can be easily refactored to a traditional package-by-layer approach.
+
 ---
 
 ## ⚙️ Technologies Used
