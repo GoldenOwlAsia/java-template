@@ -85,7 +85,7 @@ public class SecurityConfig {
     public JwtDecoder customJwtDecoder() {
         SecretKey key = new SecretKeySpec(jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key).build();
-    }//ROLE_ADMIN
+    }
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
