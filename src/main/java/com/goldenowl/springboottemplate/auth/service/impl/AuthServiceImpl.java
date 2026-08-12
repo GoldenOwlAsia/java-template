@@ -3,31 +3,38 @@ package com.goldenowl.springboottemplate.auth.service.impl;
 import com.goldenowl.springboottemplate.app.exception.BlacklistedTokenException;
 import com.goldenowl.springboottemplate.app.exception.InvalidTokenException;
 import com.goldenowl.springboottemplate.app.exception.LoginNotValidException;
+import com.goldenowl.springboottemplate.app.exception.ResourceAlreadyExistsException;
+import com.goldenowl.springboottemplate.app.exception.ResourceNotFoundException;
 import com.goldenowl.springboottemplate.app.exception.SignUpNotValidException;
 import com.goldenowl.springboottemplate.app.utils.TimeUtils;
 import com.goldenowl.springboottemplate.auth.dto.LoginRequestDTO;
 import com.goldenowl.springboottemplate.auth.dto.LoginResponseDTO;
 import com.goldenowl.springboottemplate.auth.dto.RegistrationDTO;
 import com.goldenowl.springboottemplate.auth.dto.TokenResponseDTO;
-import com.goldenowl.springboottemplate.auth.entity.SignUpEntity;
-import com.goldenowl.springboottemplate.auth.enumeration.SignUpStatus;
+import com.goldenowl.springboottemplate.auth.entity.RoleEntity;
+import com.goldenowl.springboottemplate.auth.enumeration.UserDefaultType;
 import com.goldenowl.springboottemplate.auth.mapper.AuthMapper;
 import com.goldenowl.springboottemplate.auth.properties.JwtProperties;
-import com.goldenowl.springboottemplate.auth.repository.SignUpRepository;
 import com.goldenowl.springboottemplate.auth.service.AuthService;
-import com.goldenowl.springboottemplate.auth.service.JwtKeyService;
+import com.goldenowl.springboottemplate.auth.service.JwtService;
+import com.goldenowl.springboottemplate.auth.service.RoleService;
 import com.goldenowl.springboottemplate.auth.service.TokenBlacklistService;
+import com.goldenowl.springboottemplate.email.dto.CompleteUserMailDTO;
+import com.goldenowl.springboottemplate.email.service.MailService;
 import com.goldenowl.springboottemplate.user.entity.UserEntity;
+import com.goldenowl.springboottemplate.user.enumeration.UserStatus;
+import com.goldenowl.springboottemplate.user.repository.UserRepository;
 import com.goldenowl.springboottemplate.user.service.UserService;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -35,145 +42,182 @@ import java.util.UUID;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    private static final int EXPIRED_VERIFICATION_TOKEN_SECONDS = 300; // 300s
-    private final AuthMapper authMapper;
-    private final SignUpRepository signUpRepository;
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtProperties jwtProperties;
-    private final JwtKeyService jwtKeyService;
-    private final TokenBlacklistService tokenBlacklistService;
+  private static final int EXPIRED_VERIFICATION_TOKEN_SECONDS = 300;
 
-    @Override
-    public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
-        log.info("Login attempt for username: {}", loginRequestDTO.getUsername());
+  private final AuthMapper authMapper;
 
-        UserEntity user = userService.getUserByUsername(loginRequestDTO.getUsername());
-        if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
-            log.warn("Invalid password attempt for user: {}", loginRequestDTO.getUsername());
-            throw new LoginNotValidException("Invalid password");
-        }
+  private final UserRepository userRepository;
 
-        log.info("User {} logged in successfully", loginRequestDTO.getUsername());
-        return getLoginResponseWithAssignedTokens(user);
+  private final UserService userService;
+
+  private final RoleService roleService;
+
+  private final PasswordEncoder passwordEncoder;
+
+  private final JwtProperties jwtProperties;
+
+  private final JwtService jwtService;
+
+  private final TokenBlacklistService tokenBlacklistService;
+
+  private final MailService mailService;
+
+  @Override
+  public LoginResponseDTO login(LoginRequestDTO loginRequestDTO) {
+    log.info("Login attempt for username: {}", loginRequestDTO.getUsername());
+
+    UserEntity user;
+    try {
+      user = userService.getUserByUsername(loginRequestDTO.getUsername());
+    } catch (ResourceNotFoundException ex) {
+      throw new LoginNotValidException("Invalid username or password");
     }
 
-    @Override
-    public void logout(String accessToken, String refreshToken) {
-        tokenBlacklistService.blacklistAccessToken(accessToken);
-        tokenBlacklistService.blacklistRefreshToken(refreshToken);
+    if (user.getStatus() != UserStatus.ACTIVE
+        || user.getPassword() == null
+        || !passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
+      log.warn("Invalid login attempt for user: {}", loginRequestDTO.getUsername());
+      throw new LoginNotValidException("Invalid username or password");
     }
 
-    @Override
-    public TokenResponseDTO refreshToken(String refreshToken) {
-        if (!jwtKeyService.validateToken(refreshToken)) {
-            throw new InvalidTokenException("Invalid or expired refresh token");
-        }
-        if (tokenBlacklistService.isRefreshTokenBlacklisted(refreshToken)) {
-            throw new BlacklistedTokenException("Refresh token is blacklisted");
-        }
+    log.info("User {} logged in successfully", loginRequestDTO.getUsername());
+    return getLoginResponseWithAssignedTokens(user.getUsername());
+  }
 
-        String username = jwtKeyService.extractUsername(refreshToken);
-        UserEntity user = userService.getUserByUsername(username);
+  @Override
+  public void logout(String accessToken, String refreshToken) {
+    tokenBlacklistService.blacklistAccessToken(accessToken);
+    tokenBlacklistService.blacklistRefreshToken(refreshToken);
+  }
 
-        // Create new access token
-        String newAccessToken = jwtKeyService.generateToken(user, jwtProperties.getTokenExp());
-        // Create new refresh token
-        String newRefreshToken = jwtKeyService.generateRefreshToken(user, jwtProperties.getRefreshTokenExp());
-
-        // Blacklist the old refresh token cũ
-        tokenBlacklistService.blacklistRefreshToken(refreshToken);
-
-        return TokenResponseDTO.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .build();
+  @Override
+  public TokenResponseDTO refreshToken(String refreshToken) {
+    if (!jwtService.validateToken(refreshToken) || !jwtService.isRefreshToken(refreshToken)) {
+      throw new InvalidTokenException("Invalid or expired refresh token");
+    }
+    if (!tokenBlacklistService.tryConsumeRefreshToken(refreshToken)) {
+      throw new BlacklistedTokenException("Refresh token is blacklisted or already used");
     }
 
-    @Override
-    public LoginResponseDTO getLoginResponseWithAssignedTokens(UserEntity user) {
-        if (user == null) {
-            throw new IllegalArgumentException("User cannot be null");
-        }
-        LoginResponseDTO responseDTO = authMapper.map(user);
+    String username = jwtService.extractUsername(refreshToken);
+    UserEntity user = userService.getUserByUsername(username);
 
-        // Generate token and refresh token
-        responseDTO.setToken(jwtKeyService.generateToken(user, jwtProperties.getTokenExp()));
-        responseDTO.setRefreshToken(jwtKeyService.generateRefreshToken(user, jwtProperties.getRefreshTokenExp()));
+    String newAccessToken = jwtService.generateToken(user, jwtProperties.getTokenExp());
+    String newRefreshToken =
+        jwtService.generateRefreshToken(user, jwtProperties.getRefreshTokenExp());
 
-        log.info("Generated tokens for user: {}", user.getUsername());
-        return responseDTO;
+    return TokenResponseDTO.builder()
+        .accessToken(newAccessToken)
+        .refreshToken(newRefreshToken)
+        .build();
+  }
+
+  @Override
+  public LoginResponseDTO getLoginResponseWithAssignedTokens(String username) {
+    UserEntity user = userService.getUserByUsername(username);
+    LoginResponseDTO responseDTO = authMapper.map(user);
+
+    responseDTO.setToken(jwtService.generateToken(user, jwtProperties.getTokenExp()));
+    responseDTO.setRefreshToken(
+        jwtService.generateRefreshToken(user, jwtProperties.getRefreshTokenExp()));
+
+    log.info("Generated tokens for user: {}", user.getUsername());
+    return responseDTO;
+  }
+
+  @Override
+  public void signup(RegistrationDTO registrationDTO) {
+    log.info("Signing up user: {}", registrationDTO.getUsername());
+    checkExistingUser(registrationDTO);
+
+    UserEntity user = authMapper.map(registrationDTO, new UserEntity());
+    user.setStatus(UserStatus.PENDING);
+    user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
+    assignNewVerifyToken(user);
+
+    userRepository.save(user);
+    log.info("User {} signed up successfully with status PENDING", registrationDTO.getUsername());
+  }
+
+  @Override
+  public void verifyUserRegistration(String token) {
+    log.info("Verifying user registration");
+    UserEntity user =
+        userRepository
+            .findByCurrentVerificationTokenAndStatus(token, UserStatus.PENDING)
+            .orElseThrow(() -> new SignUpNotValidException("Token is not valid"));
+
+    if (user.getExpiredVerificationTokenDate() == null) {
+      throw new SignUpNotValidException("Token is not valid");
+    }
+    if (LocalDateTime.now().isAfter(user.getExpiredVerificationTokenDate())) {
+      throw new SignUpNotValidException("Token is expired");
     }
 
-    @Override
-    public void signup(RegistrationDTO registrationDTO) {
-        log.info("Signing up user: {}", registrationDTO.getUsername());
+    RoleEntity userRole = roleService.getRoleByName(UserDefaultType.USER.name());
+    user.setStatus(UserStatus.ACTIVE);
+    // Mutable set required — Hibernate replaces collection elements via clear().
+    Set<RoleEntity> roles = user.getRoles();
+    if (roles == null) {
+      roles = new HashSet<>();
+      user.setRoles(roles);
+    } else {
+      roles.clear();
+    }
+    roles.add(userRole);
+    user.setCurrentVerificationToken(null);
+    user.setExpiredVerificationTokenDate(null);
+    userRepository.save(user);
 
-        checkExistingSignUpUser(registrationDTO);
-        SignUpEntity signUpEntity = authMapper.map(registrationDTO, new SignUpEntity());
-        signUpEntity.setStatus(SignUpStatus.PENDING);
-        signUpEntity.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
-
-        assignNewVerifyToken(signUpEntity);
-
-        signUpRepository.save(signUpEntity);
-        log.info("User {} signed up successfully with status PENDING", registrationDTO.getUsername());
+    // Welcome mail must not roll back activation (e.g. missing SMTP credentials in
+    // local/demo).
+    try {
+      mailService.sendCompleteUserMail(
+          CompleteUserMailDTO.builder()
+              .email(user.getEmail())
+              .name(user.getName())
+              .username(user.getUsername())
+              .createdAt(user.getCreatedAt())
+              .build());
+    } catch (Exception ex) {
+      log.warn(
+          "User '{}' activated but welcome email failed: {}", user.getUsername(), ex.getMessage());
     }
 
-    @Override
-    public void verifyUserRegistration(String token) {
-        log.info("Verifying user registration with token: {}", token);
-        SignUpEntity signUpEntity = signUpRepository.findByCurrentVerificationTokenAndStatusIn(token,
-                        List.of(SignUpStatus.PENDING))
-                .orElseThrow(() -> new SignUpNotValidException("Token is not valid: " + token));
+    log.info("User '{}' verified and activated successfully", user.getUsername());
+  }
 
-        // Validate token
-        if (signUpEntity.getExpiredVerificationTokenDate() == null) {
-            log.warn("Verification token has no expiry date: {}", token);
-            throw new SignUpNotValidException("Token is not valid: " + token);
-        }
-        if (LocalDateTime.now().isAfter(signUpEntity.getExpiredVerificationTokenDate())) {
-            log.warn("Verification token expired: {}", token);
-            throw new SignUpNotValidException("Token is expired: " + token);
-        }
+  @Override
+  public void refreshUserVerification(String username) {
+    log.info("Refreshing verification token for username: {}", username);
+    UserEntity user =
+        userRepository
+            .findByUsernameAndStatusIn(username, List.of(UserStatus.PENDING))
+            .orElseThrow(() -> new SignUpNotValidException("Username is not found"));
 
-        signUpEntity.setStatus(SignUpStatus.SUCCESS);
-        signUpRepository.save(signUpEntity);
-
-        // Create user entity
-        userService.createUser(signUpEntity);
-
-        log.info("User '{}' verified and created successfully", signUpEntity.getUsername());
+    if (user.getExpiredVerificationTokenDate() != null
+        && LocalDateTime.now().isBefore(user.getExpiredVerificationTokenDate())) {
+      log.info("Verification token still valid for username: {}", username);
+      return;
     }
 
-    @Override
-    public void refreshUserVerification(String username) {
-        log.info("Refreshing verification token for username: {}", username);
-        SignUpEntity signUpEntity = signUpRepository.findByUsernameAndStatusIn(username,
-                        List.of(SignUpStatus.PENDING))
-                .orElseThrow(() -> new SignUpNotValidException("Username is not found: " + username));
-        assignNewVerifyToken(signUpEntity);
-        signUpRepository.save(signUpEntity);
+    assignNewVerifyToken(user);
+    userRepository.save(user);
+  }
+
+  private void checkExistingUser(RegistrationDTO dto) {
+    if (userRepository.existsByUsername(dto.getUsername())) {
+      throw new ResourceAlreadyExistsException("User", "username", dto.getUsername());
     }
-
-    private void checkExistingSignUpUser(RegistrationDTO dto) {
-        List<SignUpStatus> validStatuses = List.of(SignUpStatus.PENDING, SignUpStatus.SUCCESS);
-
-        if (signUpRepository.existsByUsernameAndStatusIn(dto.getUsername(), validStatuses)) {
-            log.warn("Attempt to signup with existing username: {}", dto.getUsername());
-            throw new SignUpNotValidException("Username already exists");
-        }
-
-        if (signUpRepository.existsByEmailAndStatusIn(dto.getEmail(), validStatuses)) {
-            log.warn("Attempt to signup with existing email: {}", dto.getEmail());
-            throw new SignUpNotValidException("Email already registered");
-        }
+    if (userRepository.existsByEmail(dto.getEmail())) {
+      throw new ResourceAlreadyExistsException("User", "email", dto.getEmail());
     }
+  }
 
-    private void assignNewVerifyToken(SignUpEntity signUpEntity) {
-        final String token = UUID.randomUUID().toString();
-        signUpEntity.setCurrentVerificationToken(token);
-        signUpEntity.setExpiredVerificationTokenDate(TimeUtils.getExpiredTime(EXPIRED_VERIFICATION_TOKEN_SECONDS));
-        log.info("Assign new token {} for user {}", token, signUpEntity.getName());
-    }
+  private void assignNewVerifyToken(UserEntity user) {
+    user.setCurrentVerificationToken(UUID.randomUUID().toString());
+    user.setExpiredVerificationTokenDate(
+        TimeUtils.getExpiredTime(EXPIRED_VERIFICATION_TOKEN_SECONDS));
+    log.debug("Assigned new verification token for user {}", user.getUsername());
+  }
 }

@@ -17,18 +17,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 class UserController {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    @GetMapping("/{username}")
-    @ResponseStatus(HttpStatus.OK)
-    UserProfileDTO getProfileByUsername(@PathVariable String username) {
-        return userService.getProfileByUsername(username);
-    }
+  @GetMapping("/{username}")
+  @ResponseStatus(HttpStatus.OK)
+  UserProfileDTO getProfileByUsername(@PathVariable String username) {
+    return userService.getProfileByUsername(username);
+  }
 
-    @DeleteMapping("/{username}")
-    @ResponseStatus(HttpStatus.OK)
-    @PreAuthorize("hasRole('ADMIN')")
-    void deleteUser(@PathVariable String username) {
-        userService.deleteUser(username);
-    }
+  @DeleteMapping("/{username}")
+  @ResponseStatus(HttpStatus.OK)
+  @PreAuthorize("hasRole('ADMIN')")
+  void deleteUser(@PathVariable String username) {
+    userService.deleteUser(username);
+  }
 }

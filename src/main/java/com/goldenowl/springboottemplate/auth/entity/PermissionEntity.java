@@ -4,7 +4,10 @@ import com.goldenowl.springboottemplate.app.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "GO_PERMISSION")
@@ -14,9 +17,9 @@ import lombok.*;
 @AllArgsConstructor
 public class PermissionEntity extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
-    private String name;
+  @Column(nullable = false, unique = true)
+  private String name;
 
-    @Column(length = 512)
-    private String description;
+  @Column(length = 512)
+  private String description;
 }

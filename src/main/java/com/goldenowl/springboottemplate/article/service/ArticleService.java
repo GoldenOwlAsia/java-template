@@ -7,9 +7,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface ArticleService {
-    String createArticle(ArticleSaveDTO articleSaveDTO);
-    void updateArticle(String id, ArticleSaveDTO articleSaveDTO);
-    void deleteArticle(String id);
-    Page<ArticleDTO> getArticles(Pageable pageable);
-    ArticleDetailDTO getArticleDetailById(String id);
+
+  String createArticle(ArticleSaveDTO articleSaveDTO);
+
+  void updateArticle(String id, ArticleSaveDTO articleSaveDTO);
+
+  void deleteArticle(String id);
+
+  Page<ArticleDTO> getArticles(Pageable pageable);
+
+  ArticleDetailDTO getArticleDetailById(String id);
 }

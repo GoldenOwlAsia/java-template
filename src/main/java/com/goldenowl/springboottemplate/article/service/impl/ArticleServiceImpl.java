@@ -1,6 +1,6 @@
 package com.goldenowl.springboottemplate.article.service.impl;
 
-import com.goldenowl.springboottemplate.app.config.CustomCacheConfig;
+import com.goldenowl.springboottemplate.app.constant.CacheConstant;
 import com.goldenowl.springboottemplate.app.exception.ResourceNotFoundException;
 import com.goldenowl.springboottemplate.app.utils.AuthenticationUtils;
 import com.goldenowl.springboottemplate.article.dto.ArticleDTO;
@@ -27,63 +27,65 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 class ArticleServiceImpl implements ArticleService {
 
-    private final ArticleRepository articleRepository;
-    private final UserService userService;
-    private final ArticleMapper articleMapper;
+  private final ArticleRepository articleRepository;
 
-    @Override
-    public String createArticle(ArticleSaveDTO articleSaveDTO) {
-        log.info("Creating article with title: {}", articleSaveDTO.getTitle());
-        // Get author
-        UserEntity author = userService.getUserByUsername(AuthenticationUtils.getCurrentUsername());
+  private final UserService userService;
 
-        // Set article data
-        ArticleEntity articleEntity = articleMapper.mapToEntity(articleSaveDTO);
-        articleEntity.setAuthor(author);
+  private final ArticleMapper articleMapper;
 
-        var savedEntity = articleRepository.save(articleEntity);
-        log.info("Article created successfully with ID: {}", savedEntity.getId());
+  @Override
+  public String createArticle(ArticleSaveDTO articleSaveDTO) {
+    log.info("Creating article with title: {}", articleSaveDTO.getTitle());
+    // Get author
+    UserEntity author = userService.getUserByUsername(AuthenticationUtils.getCurrentUsername());
 
-        return savedEntity.getId();
+    // Set article data
+    ArticleEntity articleEntity = articleMapper.mapToEntity(articleSaveDTO);
+    articleEntity.setAuthor(author);
+
+    var savedEntity = articleRepository.save(articleEntity);
+    log.info("Article created successfully with ID: {}", savedEntity.getId());
+
+    return savedEntity.getId();
+  }
+
+  @Override
+  @CacheEvict(value = CacheConstant.ARTICLE_DETAIL, key = "#id")
+  public void updateArticle(String id, ArticleSaveDTO articleSaveDTO) {
+    ArticleEntity articleEntity = getArticleEntity(id);
+    articleMapper.mapToEntity(articleSaveDTO, articleEntity);
+    articleRepository.save(articleEntity);
+  }
+
+  @Override
+  @CacheEvict(value = CacheConstant.ARTICLE_DETAIL, key = "#id")
+  public void deleteArticle(String id) {
+    log.info("Deleting article with ID: {}", id);
+    if (!articleRepository.existsById(id)) {
+      throw new ResourceNotFoundException("Article", "id", id);
     }
+    articleRepository.deleteById(id);
+    log.info("Article deleted successfully: {}", id);
+  }
 
-    @Override
-    @CacheEvict(value = CustomCacheConfig.CACHE_ARTICLE_DETAIL, key = "#id")
-    public void updateArticle(String id, ArticleSaveDTO articleSaveDTO) {
-        ArticleEntity articleEntity = getArticleEntity(id);
-        articleMapper.mapToEntity(articleSaveDTO, articleEntity);
-        articleRepository.save(articleEntity);
-    }
+  @Override
+  public Page<ArticleDTO> getArticles(Pageable pageable) {
+    log.debug("Fetching articles with pageable: {}", pageable);
+    Page<ArticleEntity> articleEntityPage = articleRepository.findAll(pageable);
+    return articleEntityPage.map(articleMapper::mapToDto);
+  }
 
-    @Override
-    @CacheEvict(value = CustomCacheConfig.CACHE_ARTICLE_DETAIL, key = "#id")
-    public void deleteArticle(String id) {
-        log.info("Deleting article with ID: {}", id);
-        if (!articleRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User", "id", id);
-        }
-        articleRepository.deleteById(id);
-        log.info("Article deleted successfully: {}", id);
-    }
+  @Override
+  @Cacheable(value = CacheConstant.ARTICLE_DETAIL, key = "#id")
+  public ArticleDetailDTO getArticleDetailById(String id) {
+    log.info("Fetching article detail for ID: {}", id);
+    var article = getArticleEntity(id);
+    return articleMapper.mapToArticleDetailDTO(article);
+  }
 
-    @Override
-    public Page<ArticleDTO> getArticles(Pageable pageable) {
-        log.debug("Fetching articles with pageable: {}", pageable);
-        Page<ArticleEntity> articleEntityPage = articleRepository.findAll(pageable);
-        return articleEntityPage.map(articleMapper::mapToDto);
-    }
-
-    @Override
-    @Cacheable(value = CustomCacheConfig.CACHE_ARTICLE_DETAIL, key = "#id")
-    public ArticleDetailDTO getArticleDetailById(String id) {
-        log.info("Fetching article detail for ID: {}", id);
-        var article = getArticleEntity(id);
-        return articleMapper.mapToArticleDetailDTO(article);
-    }
-
-    private ArticleEntity getArticleEntity(String id) {
-        return articleRepository.findById(id).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", id)
-        );
-    }
+  private ArticleEntity getArticleEntity(String id) {
+    return articleRepository
+        .findDetailedById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Article", "id", id));
+  }
 }

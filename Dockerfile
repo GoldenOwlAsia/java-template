@@ -1,33 +1,32 @@
-# Stage 1 - Build
-FROM eclipse-temurin:21-jdk AS build
+# ---- Build ----
+FROM eclipse-temurin:21-jdk-alpine AS build
 
 WORKDIR /app
 
-# Copy only pom.xml to leverage Docker cache
-COPY pom.xml ./
-COPY .mvn/ .mvn/
 COPY mvnw ./
+COPY .mvn ./.mvn
+COPY pom.xml ./
 
-# This step will cache dependencies as long as pom.xml hasn't changed
-RUN ./mvnw dependency:resolve
+RUN chmod +x mvnw \
+    && ./mvnw -B -q dependency:go-offline -DskipTests
 
-# Copy source code only after dependencies are resolved
 COPY src ./src
 
-# Package the application
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw -B -q clean package -DskipTests \
+    && APP_JAR="$(ls target/*.jar | grep -v '\.original$' | head -n 1)" \
+    && cp "$APP_JAR" /app/application.jar
 
-# Stage 2: Runtime Image
+# ---- Runtime ----
 FROM eclipse-temurin:21-jre-alpine
 
-# Set working directory
+RUN addgroup -S spring && adduser -S spring -G spring
+
 WORKDIR /app
 
-# Copy the built jar file from Stage 1
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build --chown=spring:spring /app/application.jar ./application.jar
 
-# Expose port (optional - usually 8160)
+USER spring:spring
+
 EXPOSE 8160
 
-# Run the Spring Boot app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "application.jar"]

@@ -6,16 +6,18 @@ import com.goldenowl.springboottemplate.article.dto.ArticleSaveDTO;
 import com.goldenowl.springboottemplate.article.entity.ArticleEntity;
 import com.goldenowl.springboottemplate.user.mapper.UserMapper;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 @Mapper(uses = {UserMapper.class})
 public interface ArticleMapper {
 
-    ArticleDetailDTO mapToArticleDetailDTO(ArticleEntity articleEntity);
+  ArticleDetailDTO mapToArticleDetailDTO(ArticleEntity articleEntity);
 
-    ArticleDTO mapToDto(ArticleEntity entity);
+  @Mapping(target = "username", source = "author.username")
+  ArticleDTO mapToDto(ArticleEntity entity);
 
-    ArticleEntity mapToEntity(ArticleSaveDTO dto);
+  ArticleEntity mapToEntity(ArticleSaveDTO dto);
 
-    void mapToEntity(ArticleSaveDTO dto, @MappingTarget ArticleEntity articleEntity);
+  void mapToEntity(ArticleSaveDTO dto, @MappingTarget ArticleEntity articleEntity);
 }

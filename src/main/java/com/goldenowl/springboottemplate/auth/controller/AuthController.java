@@ -7,14 +7,15 @@ import com.goldenowl.springboottemplate.auth.dto.RegistrationDTO;
 import com.goldenowl.springboottemplate.auth.dto.TokenResponseDTO;
 import com.goldenowl.springboottemplate.auth.service.AuthService;
 import jakarta.validation.Valid;
-import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,43 +24,46 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 class AuthController {
 
-    private final AuthService authService;
+  private final AuthService authService;
 
-    @PostMapping("/login")
-    @ResponseStatus(HttpStatus.OK)
-    LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
-        return authService.login(loginRequestDTO);
-    }
+  @PostMapping("/login")
+  @ResponseStatus(HttpStatus.OK)
+  LoginResponseDTO login(@Valid @RequestBody LoginRequestDTO loginRequestDTO) {
+    return authService.login(loginRequestDTO);
+  }
 
-    @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.OK)
-    void logout(@Valid @RequestBody RefreshTokenDTO refreshTokenDTO, @RequestHeader("Authorization") String authHeader) {
-        final String accessToken = authHeader.substring(7);
-        final String refreshToken = refreshTokenDTO.refreshToken();
-        authService.logout(accessToken, refreshToken);
+  @PostMapping("/logout")
+  @ResponseStatus(HttpStatus.OK)
+  void logout(
+      @Valid @RequestBody RefreshTokenDTO refreshTokenDTO,
+      @RequestHeader(value = "Authorization", required = false) String authHeader) {
+    if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
+      throw new IllegalArgumentException("Authorization Bearer token is required");
     }
+    authService.logout(authHeader.substring(7), refreshTokenDTO.refreshToken());
+  }
 
-    @PostMapping("/refresh-token/{refreshToken}")
-    @ResponseStatus(HttpStatus.OK)
-    TokenResponseDTO refreshToken(@PathVariable String refreshToken) {
-        return authService.refreshToken(refreshToken);
-    }
+  @PostMapping("/refresh-token")
+  @ResponseStatus(HttpStatus.OK)
+  TokenResponseDTO refreshToken(@Valid @RequestBody RefreshTokenDTO refreshTokenDTO) {
+    return authService.refreshToken(refreshTokenDTO.refreshToken());
+  }
 
-    @PostMapping("/sign-up")
-    @ResponseStatus(HttpStatus.OK)
-    void signUp(@Valid @RequestBody RegistrationDTO registrationDTO) {
-        authService.signup(registrationDTO);
-    }
+  @PostMapping("/sign-up")
+  @ResponseStatus(HttpStatus.OK)
+  void signUp(@Valid @RequestBody RegistrationDTO registrationDTO) {
+    authService.signup(registrationDTO);
+  }
 
-    @PostMapping("/verification/{userVerifyToken}")
-    @ResponseStatus(HttpStatus.OK)
-    void verifyUser(@PathVariable String userVerifyToken) {
-        authService.verifyUserRegistration(userVerifyToken);
-    }
+  @PostMapping("/verification/{userVerifyToken}")
+  @ResponseStatus(HttpStatus.OK)
+  void verifyUser(@PathVariable String userVerifyToken) {
+    authService.verifyUserRegistration(userVerifyToken);
+  }
 
-    @PostMapping("/refresh-user-verification")
-    @ResponseStatus(HttpStatus.OK)
-    void refreshUserVerification(@PathParam("username") String username) {
-        authService.refreshUserVerification(username);
-    }
+  @PostMapping("/refresh-user-verification")
+  @ResponseStatus(HttpStatus.OK)
+  void refreshUserVerification(@RequestParam("username") String username) {
+    authService.refreshUserVerification(username);
+  }
 }

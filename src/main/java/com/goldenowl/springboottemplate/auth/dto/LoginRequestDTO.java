@@ -5,9 +5,10 @@ import lombok.Data;
 
 @Data
 public class LoginRequestDTO {
-    @NotBlank(message = "Username must not be blank")
-    private String username;
 
-    @NotBlank(message = "Password must not be blank")
-    private String password;
+  @NotBlank(message = "Username must not be blank")
+  private String username;
+
+  @NotBlank(message = "Password must not be blank")
+  private String password;
 }

@@ -16,13 +16,10 @@ import org.springframework.web.context.request.WebRequest;
 @Profile(ProfileConstant.DEVELOPMENT)
 class DevExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    ResponseEntity<ErrorResponseDTO> handleGeneralException(Exception ex, WebRequest request) {
-        return ExceptionHandlerUtils.generateErrorResponse(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    ResponseEntity<ErrorResponseDTO> handleRuntimeException(Exception ex, WebRequest request) {
-        return ExceptionHandlerUtils.generateErrorResponse(ex, request, HttpStatus.BAD_REQUEST);
-    }
+  @ExceptionHandler(Exception.class)
+  ResponseEntity<ErrorResponseDTO> handleGeneralException(Exception ex, WebRequest request) {
+    log.error("Unhandled exception", ex);
+    return ExceptionHandlerUtils.generateErrorResponse(
+        ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 }
