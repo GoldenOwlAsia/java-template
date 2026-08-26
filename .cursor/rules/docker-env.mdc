@@ -1,0 +1,15 @@
+---
+description: Docker Compose and environment variable conventions
+globs:
+  - "**/docker-compose.yml"
+  - "**/Dockerfile"
+  - "**/.env.example"
+  - "**/application*.yml"
+alwaysApply: false
+---
+
+# docker-env
+
+Source of truth: `.agents/rules/docker-env.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

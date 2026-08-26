@@ -1,0 +1,10 @@
+---
+description: Package-by-feature architecture and where to put new code
+alwaysApply: true
+---
+
+# architecture
+
+Source of truth: `.agents/rules/architecture.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

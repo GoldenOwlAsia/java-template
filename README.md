@@ -2,10 +2,10 @@
   <img src="https://res.cloudinary.com/deop9ytsv/image/upload/v1542422606/spring-boot-icon0_cf21dec4-5056-b3a8-49c015fd3bde6cb5.png" alt="Project Banner" />
 </p>
 
-<h2 align="center">Spring Boot Template</h2>
+<h2 align="center">Spring Template - Mono Project</h2>
 
 <p align="center">
-  Monolithic Spring Boot 4 starter (package-by-feature) with JWT/OAuth2, Redis cache + token blacklist, PostgreSQL/Flyway, and sample article APIs.
+  This is a monolithic web application backend built with Spring Boot 4, structured using the Packaged by Feature approach. It supports secure authentication, authorization, user management, role-based permission control, and email notifications using templated emails.
 </p>
 
 <p align="center">
@@ -14,22 +14,20 @@
   <a href="#"><img src="https://img.shields.io/badge/PostgreSQL-17-blue" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Redis-7-red" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Spotless-Google-orange" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/License-MIT-yellow" /></a>
 </p>
+
+Defaults are fine for local demos. Before any shared environment, follow [SECURITY.md](SECURITY.md).
 
 ---
 
 ## Overview
 
-MIT-licensed boilerplate for a production-shaped Spring API:
-
 - Package-by-feature: `auth`, `user`, `article`, `email`, plus shared `app`
 - JWT access/refresh (with `jti`) + Google OAuth2
 - Redis for application cache and token blacklist (atomic refresh consume)
 - PostgreSQL + Flyway migrations
-- Spotless (Google Java Format) on `validate`
-
-Defaults are fine for local demos. Production still needs real secrets and ops hardening.
+- CORS via `CORS_ALLOWED_ORIGINS` (localhost defaults on `dev`; empty on `prod` unless set)
+- Spotless (Google Java Format) on Maven `validate`
 
 ---
 
@@ -42,7 +40,7 @@ Defaults are fine for local demos. Production still needs real secrets and ops h
 | Security | Spring Security, OAuth2 Resource Server + Client, JWT (jjwt) |
 | Data | Spring Data JPA, PostgreSQL 17, Flyway |
 | Cache / blacklist | Spring Cache + Redis 7 |
-| Docs | Springdoc OpenAPI (off on `prod`) |
+| Docs | Springdoc OpenAPI (`dev` only; off on `prod`) |
 | Mail | Spring Mail + Thymeleaf |
 | Codegen / style | Lombok, MapStruct, Spotless (Google) |
 | Tests | JUnit 5, H2, Spring Security Test |
@@ -53,6 +51,8 @@ Defaults are fine for local demos. Production still needs real secrets and ops h
 
 ```text
 java-template/
+├── AGENTS.md / CLAUDE.md   # AI entrypoints → .agents/
+├── .agents/                # canonical agent rules + skills
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
@@ -104,9 +104,10 @@ For **Docker Compose `app-api`**, keep compose service hostnames in `.env` (see 
 
 | Variable | Notes |
 |----------|--------|
-| `JWT_SECRET_KEY` | ≥ 32 chars (HS256). **Required** on `prod` (no default) |
+| `JWT_SECRET_KEY` | ≥ 32 chars (HS256). **Required** on `prod` (no default in yml) |
 | `DATABASE_*` / `REDIS_*` | Compose vs localhost — see `.env.example` |
 | `GOOGLE_CLIENT_*` / `MAIL_*` | Optional for basic JWT login |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated browser origins. Local default: `localhost:3000`, `localhost:5173`. Empty on `prod` unless set |
 
 Flyway seed user: **`admin` / `admin123`** — change or remove before any real deploy.
 
@@ -132,18 +133,23 @@ export JWT_SECRET_KEY='your-production-grade-secret-at-least-32-chars'
 | API | http://localhost:8160 |
 | Health | http://localhost:8160/actuator/health |
 | Swagger | http://localhost:8160/swagger-ui.html (`dev` only; off on `prod`) |
+| Google OAuth | http://localhost:8160/oauth2/authorization/google |
 
-Mail and Redis health indicators are **disabled** so dummy SMTP / Redis downtime does not mark the app unhealthy.
+Google Cloud redirect URI: `http://localhost:8160/login/oauth2/code/google`.
+
+Mail and Redis health indicators are **disabled** so dummy SMTP / Redis downtime does not mark the app unhealthy. Profile `dev` exposes actuator `health`, `info`, and `metrics` only (not heapdump/env).
 
 ### 4. Smoke test
 
-```bash
-curl -s -X POST http://localhost:8160/api/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"admin123"}'
+Login JSON uses `token` (access) and `refreshToken`.
 
-export TOKEN='<access-token>'
-export REFRESH='<refresh-token>'
+```bash
+LOGIN=$(curl -s -X POST http://localhost:8160/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"admin123"}')
+
+TOKEN=$(printf '%s' "$LOGIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
+REFRESH=$(printf '%s' "$LOGIN" | python3 -c "import json,sys; print(json.load(sys.stdin)['refreshToken'])")
 
 curl -s 'http://localhost:8160/api/v1/articles/paging?page=0&size=10' \
   -H "Authorization: Bearer $TOKEN"
@@ -171,37 +177,22 @@ Default Compose profile for `app-api` is **`prod`**. API is published on **8160*
 
 ---
 
-## Formatting (Spotless)
+## Build, format, and tests
 
-Java sources are formatted with **Spotless + Google Java Format**. `spotless:check` runs in the Maven **`validate`** phase (so `./mvnw test` / `package` will fail if code is not formatted).
-
-```bash
-# Apply formatting
-./mvnw spotless:apply
-
-# Check only (also runs automatically on validate)
-./mvnw spotless:check
-```
-
-Scope: `src/main/java/**/*.java` and `src/test/java/**/*.java`.
-
----
-
-## Testing
+Spotless (Google Java Format) is bound to Maven **`validate`**, so local `./mvnw test` / `package` / `verify` fail if Java is not formatted. Scope: `src/main/java` and `src/test/java`.
 
 ```bash
-./mvnw test
-./mvnw clean test
+./mvnw spotless:apply          # rewrite sources
+./mvnw spotless:check          # check only
+./mvnw test                    # local iterate (includes Spotless)
 ./mvnw -Dtest=AuthServiceImplTest,TokenBlacklistServiceImplTest test
+./mvnw verify                  # tests + Boot jar
+./mvnw -DskipTests package     # jar only
 ```
 
-The `test` profile uses:
+The `test` profile uses H2 (Flyway off), `spring.cache.type=simple`, Redis autoconfig excluded, and an in-memory token blacklist. No PostgreSQL or Redis required.
 
-- H2 in-memory DB (Flyway off)
-- `spring.cache.type=simple`
-- Redis autoconfig excluded + in-memory token blacklist
-
-No PostgreSQL or Redis required for unit/integration tests.
+CI: `./mvnw -B spotless:check`, then `./mvnw -B verify -Dspotless.check.skip=true`.
 
 ---
 
@@ -209,23 +200,12 @@ No PostgreSQL or Redis required for unit/integration tests.
 
 | Profile | Behavior |
 |---------|----------|
-| `dev` | **Default for local** (`spring.profiles.default=dev`): SQL/debug logs, broader actuator |
-| `prod` | Swagger off, `JWT_SECRET_KEY` required, quieter logs (Compose default) |
-| `test` | H2 + in-memory cache/blacklist |
+| `dev` | Default for local (`spring.profiles.default=dev`). `show-sql`, `root` DEBUG, Swagger on, actuator `health,info,metrics` |
+| `prod` | Swagger off, `JWT_SECRET_KEY` required, quieter logs, CORS empty unless `CORS_ALLOWED_ORIGINS` is set (Compose default) |
+| `test` | Maven tests only: H2 + in-memory cache/blacklist |
 
 ---
 
-## Useful Maven commands
+## AI agents
 
-```bash
-./mvnw spotless:apply          # format
-./mvnw test                    # validate (spotless) + tests
-./mvnw -DskipTests package     # build jar
-./mvnw spring-boot:run         # run locally
-```
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+Canonical rules and skills: [`.agents/`](.agents/). Entrypoints: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md). Cursor uses thin stubs under [`.cursor/`](.cursor/) that point at `.agents/` (no symlinks).

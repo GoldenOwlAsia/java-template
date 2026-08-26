@@ -1,0 +1,31 @@
+---
+description: Java / Spring coding conventions — Lombok, MapStruct, validation
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Java / Spring style
+
+- Lombok: `@RequiredArgsConstructor`, `@Slf4j`; constructor injection only.
+- Package-private `*ServiceImpl` / controllers when neighbors do the same.
+- `@Transactional` on service impls (class-level like existing code).
+- DTOs at API boundary — never return entities from controllers.
+- Naming: `*DTO`, `*Entity`, `*Service`, `*ServiceImpl`, `*Repository`, `*Mapper`, `*Controller`.
+- Constants: `@UtilityClass`; use `ProfileConstant` / `CacheConstant` / `AttributeConstant`.
+- Comments only when intent is non-obvious. Spotless: `./mvnw spotless:apply`.
+
+## Validation (request DTOs)
+
+- Write DTOs: class + `@NotBlank(message = "...")` (see `ArticleSaveDTO`).
+- Strong rules: `@NotEmpty` + `@Pattern(..., message = "...")` (see `RegistrationDTO`).
+- Tiny bodies may be `record` + `@NotBlank` (see `RefreshTokenDTO`).
+- Prefer explicit `message=`; do not rely on default messages.
+
+## MapStruct
+
+- Spring component model via compiler flag — no need for `componentModel = "spring"` on every mapper.
+- Method names: `mapToDto` / `mapToEntity` / `mapTo*DTO`.
+- Updates: `@MappingTarget`.
+- Cross-feature: `@Mapper(uses = {UserMapper.class})`.
+- On create/update from DTO → entity: ignore `id`, `ol`, audit fields, and sensitive fields not in the DTO (see `AuthMapper`).
+- Nested flatten: `@Mapping(target = "username", source = "author.username")`.

@@ -1,0 +1,14 @@
+---
+description: Email / Thymeleaf mail handler conventions
+globs:
+  - "**/email/**/*.java"
+  - "**/templates/email/**"
+  - "**/listener/**/*.java"
+alwaysApply: false
+---
+
+# email
+
+Source of truth: `.agents/rules/email.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

@@ -18,13 +18,12 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/debug/cache")
 @RequiredArgsConstructor
 @Profile(ProfileConstant.DEVELOPMENT)
-public class CacheDebugController {
+class CacheDebugController {
 
   private final CacheManager cacheManager;
 
   @GetMapping("/{cacheName}/{key}")
-  public Map<String, Object> getCacheEntry(
-      @PathVariable String cacheName, @PathVariable String key) {
+  Map<String, Object> getCacheEntry(@PathVariable String cacheName, @PathVariable String key) {
     Cache cache = cacheManager.getCache(cacheName);
     if (cache == null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cache not found: " + cacheName);

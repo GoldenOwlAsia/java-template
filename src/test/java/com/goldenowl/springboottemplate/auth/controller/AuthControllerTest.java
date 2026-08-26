@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.goldenowl.springboottemplate.app.config.SecurityConfigTest;
+import com.goldenowl.springboottemplate.app.constant.ProfileConstant;
 import com.goldenowl.springboottemplate.app.exception.GlobalExceptionHandler;
 import com.goldenowl.springboottemplate.auth.dto.LoginRequestDTO;
 import com.goldenowl.springboottemplate.auth.dto.LoginResponseDTO;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +30,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(AuthController.class)
+@ActiveProfiles(ProfileConstant.TEST)
 @Import({SecurityConfigTest.class, GlobalExceptionHandler.class})
 class AuthControllerTest {
 

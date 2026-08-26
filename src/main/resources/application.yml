@@ -76,3 +76,16 @@ goldenowl:
     secret-key: ${JWT_SECRET_KEY:change-me-to-a-secure-jwt-secret-key-32b}
     token-exp: PT15M         # 15 minutes
     refresh-token-exp: P7D   # 7 days
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+    max-age: 3600

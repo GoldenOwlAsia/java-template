@@ -40,7 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 @Slf4j
-public class AuthServiceImpl implements AuthService {
+class AuthServiceImpl implements AuthService {
 
   private static final int EXPIRED_VERIFICATION_TOKEN_SECONDS = 300;
 
@@ -115,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public LoginResponseDTO getLoginResponseWithAssignedTokens(String username) {
     UserEntity user = userService.getUserByUsername(username);
-    LoginResponseDTO responseDTO = authMapper.map(user);
+    LoginResponseDTO responseDTO = authMapper.mapToLoginResponseDTO(user);
 
     responseDTO.setToken(jwtService.generateToken(user, jwtProperties.getTokenExp()));
     responseDTO.setRefreshToken(
@@ -130,7 +130,7 @@ public class AuthServiceImpl implements AuthService {
     log.info("Signing up user: {}", registrationDTO.getUsername());
     checkExistingUser(registrationDTO);
 
-    UserEntity user = authMapper.map(registrationDTO, new UserEntity());
+    UserEntity user = authMapper.mapToEntity(registrationDTO, new UserEntity());
     user.setStatus(UserStatus.PENDING);
     user.setPassword(passwordEncoder.encode(registrationDTO.getPassword()));
     assignNewVerifyToken(user);
@@ -190,19 +190,18 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void refreshUserVerification(String username) {
     log.info("Refreshing verification token for username: {}", username);
-    UserEntity user =
-        userRepository
-            .findByUsernameAndStatusIn(username, List.of(UserStatus.PENDING))
-            .orElseThrow(() -> new SignUpNotValidException("Username is not found"));
-
-    if (user.getExpiredVerificationTokenDate() != null
-        && LocalDateTime.now().isBefore(user.getExpiredVerificationTokenDate())) {
-      log.info("Verification token still valid for username: {}", username);
-      return;
-    }
-
-    assignNewVerifyToken(user);
-    userRepository.save(user);
+    userRepository
+        .findByUsernameAndStatusIn(username, List.of(UserStatus.PENDING))
+        .ifPresent(
+            user -> {
+              if (user.getExpiredVerificationTokenDate() != null
+                  && LocalDateTime.now().isBefore(user.getExpiredVerificationTokenDate())) {
+                log.debug("Verification token still valid for username: {}", username);
+                return;
+              }
+              assignNewVerifyToken(user);
+              userRepository.save(user);
+            });
   }
 
   private void checkExistingUser(RegistrationDTO dto) {

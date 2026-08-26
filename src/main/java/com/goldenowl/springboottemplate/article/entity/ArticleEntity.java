@@ -33,7 +33,8 @@ public class ArticleEntity extends BaseEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  // @NotFound forces EAGER in Hibernate — do not mark LAZY.
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "author_id", nullable = false)
   @NotFound(action = NotFoundAction.IGNORE)
   private UserEntity author;

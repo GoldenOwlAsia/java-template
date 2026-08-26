@@ -1,0 +1,15 @@
+---
+description: Persistence, soft delete, Flyway, and permission seeding
+globs:
+  - "**/entity/**/*.java"
+  - "**/repository/**/*.java"
+  - "**/db/migration/**"
+  - "**/application*.yml"
+alwaysApply: false
+---
+
+# data-flyway
+
+Source of truth: `.agents/rules/data-flyway.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

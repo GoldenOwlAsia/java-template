@@ -94,7 +94,7 @@ class AuthServiceImplTest {
 
     when(userService.getUserByUsername("admin")).thenReturn(activeUser);
     when(passwordEncoder.matches("secret", "encoded")).thenReturn(true);
-    when(authMapper.map(activeUser)).thenReturn(mapped);
+    when(authMapper.mapToLoginResponseDTO(activeUser)).thenReturn(mapped);
     when(jwtProperties.getTokenExp()).thenReturn(Duration.ofMinutes(15));
     when(jwtProperties.getRefreshTokenExp()).thenReturn(Duration.ofDays(7));
     when(jwtService.generateToken(activeUser, Duration.ofMinutes(15))).thenReturn("access");
@@ -202,7 +202,7 @@ class AuthServiceImplTest {
     LoginResponseDTO mapped = new LoginResponseDTO();
     mapped.setUsername("admin");
     when(userService.getUserByUsername("admin")).thenReturn(activeUser);
-    when(authMapper.map(activeUser)).thenReturn(mapped);
+    when(authMapper.mapToLoginResponseDTO(activeUser)).thenReturn(mapped);
     when(jwtProperties.getTokenExp()).thenReturn(Duration.ofMinutes(15));
     when(jwtProperties.getRefreshTokenExp()).thenReturn(Duration.ofDays(7));
     when(jwtService.generateToken(activeUser, Duration.ofMinutes(15))).thenReturn("access");
@@ -239,7 +239,7 @@ class AuthServiceImplTest {
     UserEntity mapped = new UserEntity();
     when(userRepository.existsByUsername("bob")).thenReturn(false);
     when(userRepository.existsByEmail("bob@example.com")).thenReturn(false);
-    when(authMapper.map(eq(dto), any(UserEntity.class))).thenReturn(mapped);
+    when(authMapper.mapToEntity(eq(dto), any(UserEntity.class))).thenReturn(mapped);
     when(passwordEncoder.encode("Password1")).thenReturn("encoded-pass");
 
     authService.signup(dto);
@@ -319,11 +319,13 @@ class AuthServiceImplTest {
   }
 
   @Test
-  void refreshUserVerification_rejectsUnknownUsername() {
+  void refreshUserVerification_ignoresUnknownUsername() {
     when(userRepository.findByUsernameAndStatusIn("ghost", List.of(UserStatus.PENDING)))
         .thenReturn(Optional.empty());
 
-    assertThrows(SignUpNotValidException.class, () -> authService.refreshUserVerification("ghost"));
+    authService.refreshUserVerification("ghost");
+
+    verify(userRepository, never()).save(any());
   }
 
   @Test

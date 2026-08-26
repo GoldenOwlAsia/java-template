@@ -34,3 +34,10 @@ spring:
 goldenowl:
   jwt:
     secret-key: my-super-secure-jwt-secret-key-test
+
+logging:
+  level:
+    root: WARN
+    org.springframework: WARN
+    org.hibernate: WARN
+    org.hibernate.orm.boot: ERROR

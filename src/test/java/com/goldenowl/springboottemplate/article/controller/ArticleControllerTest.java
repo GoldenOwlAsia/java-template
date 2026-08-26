@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.goldenowl.springboottemplate.app.config.SecurityConfigTest;
+import com.goldenowl.springboottemplate.app.constant.ProfileConstant;
+import com.goldenowl.springboottemplate.app.exception.GlobalExceptionHandler;
 import com.goldenowl.springboottemplate.article.dto.ArticleDTO;
 import com.goldenowl.springboottemplate.article.dto.ArticleDetailDTO;
 import com.goldenowl.springboottemplate.article.dto.ArticleSaveDTO;
@@ -31,6 +33,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,7 +41,8 @@ import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(ArticleController.class)
-@Import(SecurityConfigTest.class)
+@ActiveProfiles(ProfileConstant.TEST)
+@Import({SecurityConfigTest.class, GlobalExceptionHandler.class})
 class ArticleControllerTest {
 
   @Autowired private MockMvc mockMvc;
@@ -128,6 +132,12 @@ class ArticleControllerTest {
     mockMvc.perform(delete(BASE_URL + "/" + ARTICLE_ID)).andExpect(status().isOk());
 
     verify(articleService).deleteArticle(ARTICLE_ID);
+  }
+
+  @Test
+  @WithMockUser
+  void getArticleDetailById_withoutAuthority_shouldReturnForbidden() throws Exception {
+    mockMvc.perform(get(BASE_URL + "/" + ARTICLE_ID)).andExpect(status().isForbidden());
   }
 
   @Test

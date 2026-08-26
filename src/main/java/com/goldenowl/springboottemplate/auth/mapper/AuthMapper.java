@@ -22,7 +22,7 @@ public interface AuthMapper {
   @Mapping(target = "expiredVerificationTokenDate", ignore = true)
   @Mapping(target = "roles", ignore = true)
   @Mapping(target = "password", ignore = true)
-  UserEntity map(RegistrationDTO registrationDTO, @MappingTarget UserEntity userEntity);
+  UserEntity mapToEntity(RegistrationDTO registrationDTO, @MappingTarget UserEntity userEntity);
 
-  LoginResponseDTO map(UserEntity user);
+  LoginResponseDTO mapToLoginResponseDTO(UserEntity user);
 }

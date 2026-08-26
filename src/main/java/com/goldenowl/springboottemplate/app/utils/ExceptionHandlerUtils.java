@@ -37,19 +37,37 @@ public class ExceptionHandlerUtils {
       WebRequest request,
       HttpStatus status,
       Map<String, String> errors) {
-    log.error(
-        "Exception caught - status: {}, path: {}, message: {}",
-        status.value(),
-        request.getDescription(false),
-        ex.getMessage());
+    String path = requestPath(request);
+    if (status.is5xxServerError()) {
+      log.error(
+          "Exception caught - status: {}, path: {}, message: {}",
+          status.value(),
+          path,
+          ex.getMessage(),
+          ex);
+    } else {
+      log.warn(
+          "Exception caught - status: {}, path: {}, message: {}",
+          status.value(),
+          path,
+          ex.getMessage());
+    }
 
     ErrorResponseDTO errorResponse =
         ErrorResponseDTO.builder()
             .message(message)
-            .path(request.getDescription(false))
+            .path(path)
             .status(status.value())
             .errors(errors)
             .build();
     return new ResponseEntity<>(errorResponse, status);
+  }
+
+  private String requestPath(WebRequest request) {
+    String description = request.getDescription(false);
+    if (description != null && description.startsWith("uri=")) {
+      return description.substring(4);
+    }
+    return description;
   }
 }

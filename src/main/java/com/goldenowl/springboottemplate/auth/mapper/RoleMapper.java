@@ -9,7 +9,7 @@ import org.mapstruct.Mapper;
 @Mapper
 public interface RoleMapper {
 
-  default List<String> map(Set<RoleEntity> roles) {
+  default List<String> mapToRoleNames(Set<RoleEntity> roles) {
     if (roles == null) {
       return List.of();
     }

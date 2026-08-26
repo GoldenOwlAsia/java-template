@@ -9,25 +9,17 @@ import org.springframework.cache.interceptor.LoggingCacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.cfg.DateTimeFeature;
 
 @Configuration
 @EnableAsync
-@EnableScheduling
 @EnableCaching
 public class GlobalConfig implements CachingConfigurer {
 
   @Override
   public CacheErrorHandler errorHandler() {
     return new LoggingCacheErrorHandler(true);
-  }
-
-  @Bean
-  public RestTemplate restTemplate() {
-    return new RestTemplate();
   }
 
   @Bean

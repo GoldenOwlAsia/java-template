@@ -1,0 +1,55 @@
+---
+description: Auth, JWT, blacklist, and Redis cache invariants — do not regress
+globs:
+  - "**/auth/**/*.java"
+  - "**/RedisCacheConfig.java"
+  - "**/CacheConstant.java"
+  - "**/GlobalConfig.java"
+  - "**/application*.yml"
+alwaysApply: false
+---
+
+# Auth & Redis (critical)
+
+## Two Redis uses — keep separate
+
+| Concern | Mechanism | Notes |
+|---------|-----------|--------|
+| App cache (e.g. articles) | Spring Cache + `RedisCacheConfig` | Per-cache TTL in `CacheConstant` |
+| Token blacklist / refresh consume | `StringRedisTemplate` | Keyed by JWT **`jti`** |
+
+Never store blacklist entries in `CacheManager` (no per-key TTL / wrong semantics).
+
+## JWT
+
+- Access + refresh tokens include **`jti`** (`JwtServiceImpl`).
+- Redis keys: `auth:blacklist:access:{jti}`, `auth:blacklist:refresh:{jti}`.
+- TTL = time until JWT `exp` (not a fixed 5 minutes).
+
+## Refresh rotation
+
+- `AuthServiceImpl.refreshToken` must call `tryConsumeRefreshToken` (Redis **SET NX**).
+- First caller wins; reuse / concurrent refresh → `BlacklistedTokenException`.
+- Do not revert to `isBlacklisted` + later `blacklist` (race).
+
+## Logout / filter
+
+- Logout blacklists access + refresh via `blacklist*`.
+- `JwtBlacklistFilter` runs **before** `BearerTokenAuthenticationFilter` and checks access `jti`.
+
+## Resilience (intentional)
+
+- Redis down → **fail-open**: skip/allow rather than 503; app keeps running.
+- `LoggingCacheErrorHandler` on cache get/put/evict.
+- `management.health.redis.enabled=false` (and mail health off).
+
+## Profiles for blacklist beans
+
+- Prod/dev: `TokenBlacklistServiceImpl` `@Profile("!test")`.
+- Test: `InMemoryTokenBlacklistService` `@Profile("test")` + Redis autoconfig excluded.
+
+## Do not
+
+- Introduce Redisson “for locks” unless explicitly requested.
+- Use Spring Cache TTL as a substitute for JWT-based blacklist TTL.
+- Put `spring.profiles.default` inside `application-dev.yml` / `application-prod.yml`.

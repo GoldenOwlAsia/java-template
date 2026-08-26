@@ -1,0 +1,16 @@
+---
+description: Auth, JWT, blacklist, and Redis cache invariants — do not regress
+globs:
+  - "**/auth/**/*.java"
+  - "**/RedisCacheConfig.java"
+  - "**/CacheConstant.java"
+  - "**/GlobalConfig.java"
+  - "**/application*.yml"
+alwaysApply: false
+---
+
+# auth-redis
+
+Source of truth: `.agents/rules/auth-redis.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

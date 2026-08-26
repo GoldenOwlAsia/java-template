@@ -1,0 +1,11 @@
+---
+description: Java / Spring coding conventions — Lombok, MapStruct, validation
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# java-spring
+
+Source of truth: `.agents/rules/java-spring.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

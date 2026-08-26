@@ -21,6 +21,7 @@ class UserController {
 
   @GetMapping("/{username}")
   @ResponseStatus(HttpStatus.OK)
+  @PreAuthorize("hasRole('ADMIN') or #username == authentication.name")
   UserProfileDTO getProfileByUsername(@PathVariable String username) {
     return userService.getProfileByUsername(username);
   }

@@ -1,5 +1,6 @@
 package com.goldenowl.springboottemplate.auth.controller;
 
+import com.goldenowl.springboottemplate.app.exception.InvalidTokenException;
 import com.goldenowl.springboottemplate.auth.dto.LoginRequestDTO;
 import com.goldenowl.springboottemplate.auth.dto.LoginResponseDTO;
 import com.goldenowl.springboottemplate.auth.dto.RefreshTokenDTO;
@@ -38,7 +39,7 @@ class AuthController {
       @Valid @RequestBody RefreshTokenDTO refreshTokenDTO,
       @RequestHeader(value = "Authorization", required = false) String authHeader) {
     if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-      throw new IllegalArgumentException("Authorization Bearer token is required");
+      throw new InvalidTokenException("Authorization Bearer token is required");
     }
     authService.logout(authHeader.substring(7), refreshTokenDTO.refreshToken());
   }

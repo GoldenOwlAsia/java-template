@@ -1,0 +1,32 @@
+---
+description: Slf4j logging levels and what never to log
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Logging (Slf4j)
+
+Use Lombok `@Slf4j` on services, listeners, mail handlers, filters/handlers that already do.
+
+## Levels
+
+| Level | Use for |
+|-------|---------|
+| `info` | Business milestones (create/update/delete/login success, mail send start) |
+| `debug` | Noisy reads (paging, “still valid token”) |
+| `warn` | Expected degradation (bad login, Redis down fail-open, mail send failed but flow continues) |
+| `error` | Failures that need attention (OAuth failure, unhandled exceptions, mail MessagingException in MailService) |
+
+Prefer parameterized messages: `log.info("Creating article with title: {}", title)`.
+
+## Never log
+
+- Passwords, raw JWT / refresh tokens, `Authorization` headers
+- Mail SMTP credentials, OAuth client secrets
+- Full request bodies that may contain secrets
+
+Log **usernames, emails, entity ids, titles** — not secrets.
+
+## Controllers
+
+Do not add logging in controllers; log in services / listeners.

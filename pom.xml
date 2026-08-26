@@ -14,6 +14,13 @@
 	<name>Spring Boot Template</name>
 	<description>Spring Boot template project</description>
 	<url>https://github.com/GoldenOwlAsia/java-template</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
 	<developers>
 		<developer>
 			<id>Hudson-go-tran</id>
@@ -22,10 +29,17 @@
 			<organization>GoldenOwl</organization>
 			<organizationUrl>https://goldenowl.asia</organizationUrl>
 		</developer>
+		<developer>
+			<id>Aiden-Phan-Gos</id>
+			<name>Aiden Phan</name>
+			<email>aiden.phan.gos@gmail.com</email>
+			<organization>GoldenOwl</organization>
+			<organizationUrl>https://goldenowl.asia</organizationUrl>
+		</developer>
 	</developers>
 	<scm>
-		<connection>scm:git:git://github.com/goldenowl-dev/spring-boot-template.git</connection>
-		<developerConnection>scm:git:ssh://github.com/GoldenOwlAsia/java-template.git</developerConnection>
+		<connection>scm:git:https://github.com/GoldenOwlAsia/java-template.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/GoldenOwlAsia/java-template.git</developerConnection>
 		<url>https://github.com/GoldenOwlAsia/java-template</url>
 		<tag>HEAD</tag>
 	</scm>
@@ -234,6 +248,13 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-XX:+EnableDynamicAgentLoading</argLine>
 				</configuration>
 			</plugin>
 			<plugin>
