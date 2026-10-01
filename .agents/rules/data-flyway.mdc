@@ -1,0 +1,39 @@
+---
+description: Persistence, soft delete, Flyway, and permission seeding
+globs:
+  - "**/entity/**/*.java"
+  - "**/repository/**/*.java"
+  - "**/db/migration/**"
+  - "**/application*.yml"
+alwaysApply: false
+---
+
+# Data & Flyway
+
+## Schema
+
+- All schema changes → new `V{n}__*.sql` under `db/migration/`.
+- Non-test JPA: `ddl-auto: validate` only.
+- Tables: `GO_<NAME>` uppercase; columns snake_case; include `ol`, audit columns, `deleted` when soft-deleting.
+
+## Entities
+
+- Extend `BaseEntity` (UUID string id, `@Version ol`, auditing).
+- Soft delete: Hibernate `@SoftDelete` on the entity (not custom `@SQLDelete`/`@Where`).
+- `repository.deleteById` performs soft delete when `@SoftDelete` is present.
+- Relations: LAZY by default. Soft-deleted parent: `@NotFound(IGNORE)` like `ArticleEntity` — Hibernate **forces EAGER**, so do not also set `FetchType.LAZY`.
+- Active-only uniqueness (users): partial unique index `WHERE deleted IS NOT TRUE` (see `V7__...`).
+
+## Permission seeding (new features)
+
+Do **not** rewrite old migrations. Prefer skill **add-flyway-migration**. New version should:
+
+1. `INSERT` into `GO_PERMISSION` (`FEATURE_READ|CREATE|UPDATE|DELETE`)
+2. Link ADMIN → all new perms in `GO_ROLE_PERMISSIONS`
+3. Link USER → usually `*_READ` only (match article unless asked otherwise)
+
+Follow id/style of `V2__init-auth-data.sql`.
+
+## Repositories
+
+- Spring Data interfaces only; `@EntityGraph` for paging/detail when fetching associations (see `ArticleRepository`).

@@ -7,18 +7,20 @@ import lombok.Data;
 @Data
 public class RegistrationDTO {
 
-    @NotEmpty(message = "Username can not be null or empty")
-    @Pattern(regexp = "^[a-z0-9]+[a-z0-9_]{3,15}$", message = "Username is not valid")
-    private String username;
+  @NotEmpty(message = "Username can not be null or empty")
+  @Pattern(regexp = "^[a-z0-9]+[a-z0-9_]{3,15}$", message = "Username is not valid")
+  private String username;
 
-    @NotEmpty(message = "Password can not be null or empty")
-    @Pattern(regexp = "^[a-z0-9]+[a-z0-9_]{3,15}$", message = "Password is not valid")
-    private String password;
+  @NotEmpty(message = "Password can not be null or empty")
+  @Pattern(
+      regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&._-]{8,64}$",
+      message = "Password must be 8-64 chars and include at least one letter and one digit")
+  private String password;
 
-    @NotEmpty(message = "Name of user can not be null or empty")
-    private String name;
+  @NotEmpty(message = "Name of user can not be null or empty")
+  private String name;
 
-    @NotEmpty(message = "Email can not be null or empty")
-    @Pattern(regexp = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$", message = "Email is not valid")
-    private String email;
+  @NotEmpty(message = "Email can not be null or empty")
+  @Pattern(regexp = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$", message = "Email is not valid")
+  private String email;
 }

@@ -4,5 +4,5 @@ import com.goldenowl.springboottemplate.auth.entity.RoleEntity;
 
 public interface RoleService {
 
-    RoleEntity getRoleByName(String name);
+  RoleEntity getRoleByName(String name);
 }

@@ -1,0 +1,64 @@
+---
+description: Project map, workflow, and hard boundaries for Cursor agents
+alwaysApply: true
+---
+
+# Spring Boot template (agents)
+
+Java 21 · Spring Boot 4.1 · package-by-feature monolith. Human runbook: `README.md`. Agent pack: `.agents/`.
+
+## Layout
+
+```text
+src/main/java/.../springboottemplate/
+  app/        # shared: config, BaseEntity, exceptions, utils, debug controllers
+  auth/       # JWT, OAuth2, SecurityConfig, roles, token blacklist
+  user/       # UserEntity, profile, verification/status
+  article/    # sample CRUD + @Cacheable detail
+  email/      # MailService + Thymeleaf handlers
+src/main/resources/
+  application.yml           # base + spring.profiles.default=dev
+  application-dev.yml       # local debug
+  application-prod.yml      # deploy
+  db/migration/             # Flyway only
+src/test/...                # mirror packages; profile test (H2, no Redis)
+```
+
+## How to work
+
+1. Read neighboring code in the same feature package before changing patterns.
+2. Prefer the smallest diff that solves the task; no drive-by refactors.
+3. New domain capability → new/extended **feature package**, not dumping into `app`.
+4. After Java edits: `./mvnw spotless:apply`, then run the smallest relevant tests.
+5. Local API needs Postgres + Redis: `docker compose up -d app-postgres-db app-redis`.
+6. Adding a domain feature (`order`, …): use skill **add-feature** (`.agents/skills/add-feature`) and clone the `article` package.
+
+## Commands
+
+```bash
+./mvnw spotless:apply
+./mvnw test                     # local iterate
+./mvnw -Dtest=ClassNameTest test
+./mvnw verify                   # CI / pre-merge (test + package)
+./mvnw spring-boot:run          # profile dev by default
+./mvnw -DskipTests package
+```
+
+## Profiles
+
+| Profile | Role |
+|---------|------|
+| `dev` | Default local (`spring.profiles.default=dev`) |
+| `prod` | Deploy; Compose `app-api` default |
+| `test` | Maven tests only |
+
+Do not put `spring.profiles.default` inside `application-*.yml` profile files.
+
+## Never without an explicit ask
+
+- Commit `.env` / real secrets
+- Add Redisson or a second Redis client
+- Move token blacklist onto Spring `CacheManager`
+- Replace JWT with server sessions
+- Re-enable Redis (or mail) health so probes fail when Redis is down
+- Broad refactors, new frameworks, or rewriting working auth

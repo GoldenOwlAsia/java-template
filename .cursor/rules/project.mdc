@@ -1,0 +1,10 @@
+---
+description: Project map, workflow, and hard boundaries for Cursor agents
+alwaysApply: true
+---
+
+# project
+
+Source of truth: `.agents/rules/project.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

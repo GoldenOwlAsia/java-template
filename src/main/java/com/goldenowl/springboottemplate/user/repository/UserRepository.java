@@ -1,17 +1,25 @@
 package com.goldenowl.springboottemplate.user.repository;
 
 import com.goldenowl.springboottemplate.user.entity.UserEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
-
+import com.goldenowl.springboottemplate.user.enumeration.UserStatus;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<UserEntity, String> {
 
-    Optional<UserEntity> findByUsername(String username);
+  @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+  Optional<UserEntity> findByUsernameAndStatus(String username, UserStatus status);
 
-    boolean existsByUsername(String username);
+  Optional<UserEntity> findByUsername(String username);
 
-    boolean existsByEmail(String email);
+  Optional<UserEntity> findByCurrentVerificationTokenAndStatus(String token, UserStatus status);
 
-    Optional<UserEntity> findByEmail(String email);
+  Optional<UserEntity> findByUsernameAndStatusIn(String username, Iterable<UserStatus> statuses);
+
+  boolean existsByUsername(String username);
+
+  boolean existsByEmail(String email);
+
+  Optional<UserEntity> findByEmail(String email);
 }

@@ -11,9 +11,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ArticleSaveDTO {
-    @NotBlank(message = "Title can not be null or empty")
-    private String title;
 
-    @NotBlank(message = "Content can not be null or empty")
-    private String content;
+  @NotBlank(message = "Title can not be null or empty")
+  private String title;
+
+  @NotBlank(message = "Content can not be null or empty")
+  private String content;
 }

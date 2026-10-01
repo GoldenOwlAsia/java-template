@@ -1,0 +1,45 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    show-sql: false
+  mail:
+    properties:
+      mail:
+        smtp:
+          debug: false
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+
+management:
+  endpoint:
+    health:
+      show-details: never
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    mail:
+      enabled: false
+    redis:
+      enabled: false
+
+# Require an explicit secret in production (no placeholder default).
+goldenowl:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY}
+  cors:
+    # Empty unless CORS_ALLOWED_ORIGINS is set (comma-separated).
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}

@@ -9,8 +9,6 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles(ProfileConstant.TEST)
 class SpringBootTemplateApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+  @Test
+  void contextLoads() {}
 }

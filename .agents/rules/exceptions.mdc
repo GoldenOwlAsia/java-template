@@ -1,0 +1,33 @@
+---
+description: Exception types and HTTP mapping via GlobalExceptionHandler
+globs:
+  - "**/exception/**/*.java"
+  - "**/controller/**/*.java"
+  - "**/service/**/*.java"
+alwaysApply: false
+---
+
+# Exceptions
+
+Throw existing `app.exception.*` types. Map via `GlobalExceptionHandler` only. Body: `ErrorResponseDTO` (`status`, `message`, `path`, optional `errors`).
+
+## Status map
+
+| Exception | HTTP |
+|-----------|------|
+| `InvalidTokenException`, `SignUpNotValidException`, `LoginNotValidException`, `IllegalArgumentException` | 400 |
+| `MethodArgumentNotValidException`, `HandlerMethodValidationException` | 400 (+ field `errors`) |
+| `HttpMessageNotReadableException` | 400 (`"Malformed request body"`) |
+| `ResourceNotFoundException` | 404 — ctor `("Article", "id", id)` |
+| `ResourceAlreadyExistsException` | 409 |
+| `BlacklistedTokenException` | 401 |
+| `AccessDeniedException` / `AuthorizationDeniedException` | 403 (`"Access denied"`) |
+| Unhandled | 500 — `Exception.class` catch-all in the same class (most-specific handler still wins). Prod body is `"Internal server error"`; other profiles use `ex.getMessage()` |
+
+Do **not** add a second `@RestControllerAdvice` for 500. Two advice beans + `Exception.class` can steal 4xx mappings (Spring picks the first advice that matches, not the most specific across beans).
+
+## Rules
+
+- Prefer reuse over new exception classes.
+- Do not return ad-hoc `Map` error bodies from controllers.
+- `ExceptionHandlerUtils` already logs errors — do not double-log the same failure in every catch unless adding context.

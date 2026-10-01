@@ -13,11 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class RoleServiceImpl implements RoleService {
 
-    private final RoleRepository roleRepository;
+  private final RoleRepository roleRepository;
 
-    @Override
-    public RoleEntity getRoleByName(String name) {
-        return roleRepository.findByName(name)
-                .orElseThrow(() -> new ResourceNotFoundException("Role %s not found".formatted(name)));
-    }
+  @Override
+  public RoleEntity getRoleByName(String name) {
+    return roleRepository
+        .findByName(name)
+        .orElseThrow(() -> new ResourceNotFoundException("Role %s not found".formatted(name)));
+  }
 }

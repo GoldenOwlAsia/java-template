@@ -1,0 +1,11 @@
+---
+description: Testing conventions and required suites for risky areas
+globs: "**/src/test/java/**/*.java"
+alwaysApply: false
+---
+
+# tests
+
+Source of truth: `.agents/rules/tests.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

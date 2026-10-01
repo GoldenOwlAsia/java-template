@@ -1,11 +1,8 @@
-version: '3.8'
-
 services:
   app-postgres-db:
     image: postgres:17
     restart: always
     container_name: app-postgres-db
-    env_file: .env
     ports:
       - "5460:5432"
     volumes:
@@ -14,6 +11,29 @@ services:
       POSTGRES_DB: app-postgres-db
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - golden-owl-network
+
+  app-redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: app-redis
+    # Published for local ./mvnw runs. Do not expose in real deployments.
+    ports:
+      - "6379:6379"
+    volumes:
+      - app-redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - golden-owl-network
 
@@ -26,19 +46,33 @@ services:
     ports:
       - "8160:8160"
     depends_on:
-      - app-postgres-db
+      app-postgres-db:
+        condition: service_healthy
+      app-redis:
+        condition: service_healthy
     networks:
       - golden-owl-network
     environment:
-      SPRING_PROFILES_ACTIVE: "DEV"
+      # Safer default for demos. Override: SPRING_PROFILES_ACTIVE=dev docker compose up
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # Must use compose service hostnames inside the network (see .env.example).
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8160/actuator/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     restart: always
 
 networks:
@@ -47,3 +81,4 @@ networks:
 
 volumes:
   app-postgres-db-data:
+  app-redis-data:

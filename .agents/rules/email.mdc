@@ -1,0 +1,33 @@
+---
+description: Email / Thymeleaf mail handler conventions
+globs:
+  - "**/email/**/*.java"
+  - "**/templates/email/**"
+  - "**/listener/**/*.java"
+alwaysApply: false
+---
+
+# Email
+
+## Flow
+
+Domain listener (JPA `@PostPersist` / `@PostUpdate`) → `UserMailDispatcher` (`@Async`) → `MailService` → `*MailHandler` extends `AbstractMailHandler` → Thymeleaf under `src/main/resources/templates/email/`.
+
+Do **not** put `@Async` on the JPA entity listener methods — Hibernate does not call the Spring proxy. Keep `@Async` on `UserMailDispatcher` (a separate Spring bean).
+
+## Handlers
+
+- Extend `AbstractMailHandler`; implement subject, template name, attribute map.
+- Template names like `verify-user-mail-template.html` (resolved via `EmailTemplateConfig` prefix `/templates/email/`).
+- Attribute keys from `AttributeConstant` — do not scatter magic strings.
+- Mail DTOs: Lombok `@Data` / `@Builder` (e.g. `VerifyUserMailDTO`).
+
+## Reliability
+
+- `MailServiceImpl` **catches** `MessagingException`, logs `error`, does **not** rethrow — mail must not break signup/verify flows.
+- Listeners: `warn` on failure and continue (see `UserMailDispatcher`).
+
+## Do not
+
+- Call SMTP directly from controllers/services outside `email` package.
+- Log mail passwords or full HTML bodies.

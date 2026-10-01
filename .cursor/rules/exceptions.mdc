@@ -1,0 +1,14 @@
+---
+description: Exception types and HTTP mapping via GlobalExceptionHandler
+globs:
+  - "**/exception/**/*.java"
+  - "**/controller/**/*.java"
+  - "**/service/**/*.java"
+alwaysApply: false
+---
+
+# exceptions
+
+Source of truth: `.agents/rules/exceptions.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

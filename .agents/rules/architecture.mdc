@@ -1,0 +1,45 @@
+---
+description: Package-by-feature architecture and where to put new code
+alwaysApply: true
+---
+
+# Architecture
+
+## Feature packages
+
+Each feature owns its full vertical slice:
+
+`controller` · `service` (+ `impl`) · `repository` · `entity` · `dto` · `mapper` · (optional feature config)
+
+| Package | Put here | Do not put here |
+|---------|----------|-----------------|
+| `app` | Cross-cutting config, shared exceptions, `BaseEntity`, utils | Domain business rules |
+| `auth` | Login/signup/token/OAuth2/security/roles | User profile CRUD / order logic |
+| `user` | User persistence, profile, status/verification | JWT issuance |
+| `article` | **Reference CRUD sample** for new features | Auth concerns |
+| `email` | Mail + Thymeleaf handlers | Domain workflows |
+
+## Layering
+
+- **Controller**: HTTP + validation + `@PreAuthorize`; call service only.
+- **Service interface** (public) + **`*ServiceImpl`** (package-private): `@Transactional` business logic.
+- **Repository**: Spring Data JPA only.
+- **Mapper**: MapStruct only (no hand-mapping in controllers).
+- **Exceptions**: `app.exception.*` + existing handlers.
+
+## New feature (order, payment, …)
+
+When the user asks to **add a feature/module/domain package**:
+
+1. Follow project skill **`add-feature`** (`.agents/skills/add-feature/SKILL.md`).
+2. **Clone `article`** package structure — rename consistently (`order` / `Order` / `/api/v1/orders`).
+3. Add Flyway `V{n}__...sql` for tables + permission seeds if using `ARTICLE_*`-style authorities.
+4. Do not place domain code in `app` or cross-wire unrelated packages.
+5. Finish with Spotless + feature tests.
+
+## Config ownership
+
+- Boot / cache / Jackson / CORS: `app.config`
+- Security / JWT beans: `auth.config`
+- Cache names + TTLs: `CacheConstant`
+- Profile names: `ProfileConstant`

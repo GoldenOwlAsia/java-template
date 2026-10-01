@@ -2,6 +2,8 @@ spring:
   config:
     activate:
       on-profile: dev
+  jpa:
+    show-sql: true
 
 logging:
   level:
@@ -14,4 +16,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info,metrics
+  health:
+    mail:
+      enabled: false
+    redis:
+      enabled: false

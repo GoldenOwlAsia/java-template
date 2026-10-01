@@ -1,0 +1,24 @@
+# Build context exclusions
+.git
+.github
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+target
+**/target
+HELP.md
+*.md
+!README.md
+
+.env
+.env.*
+!.env.example
+
+# Local tooling / OS noise
+.DS_Store
+**/.DS_Store
+*.log
+.cursor

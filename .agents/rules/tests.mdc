@@ -1,0 +1,28 @@
+---
+description: Testing conventions and required suites for risky areas
+globs: "**/src/test/java/**/*.java"
+alwaysApply: false
+---
+
+# Tests
+
+## Environment
+
+- Profile `test`: H2, Flyway off, `spring.cache.type=simple`, Redis autoconfig excluded.
+- In-memory blacklist for tests — do not require a real Redis in unit tests.
+
+## Style
+
+- Prefer pure unit tests + Mockito (`@ExtendWith(MockitoExtension.class)`).
+- Use `@WebMvcTest` / `@SpringBootTest` only when the existing suite already does for that layer.
+- WebMvc slice tests: `@ActiveProfiles(ProfileConstant.TEST)` (never `dev` — DEBUG flood + wrong beans) plus `@Import({SecurityConfigTest.class, GlobalExceptionHandler.class})`. `SecurityConfigTest` enables method security.
+- Mirror main package path; name `*Test`.
+- `@MockitoBean` / `@Mock` patterns: copy the closest existing test.
+
+## After changing auth / JWT / blacklist / cache
+
+```bash
+./mvnw -Dtest=TokenBlacklistServiceImplTest,AuthServiceImplTest,JwtServiceImplTest,JwtBlacklistFilterTest test
+```
+
+Broader safety net: `./mvnw test` (Spotless check runs on `validate`). CI / pre-merge: `./mvnw verify` (tests + Boot jar).

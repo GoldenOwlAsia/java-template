@@ -1,0 +1,43 @@
+---
+description: REST controller conventions — status codes, PreAuthorize, paging
+globs:
+  - "**/controller/**/*.java"
+alwaysApply: false
+---
+
+# API controllers
+
+- Package-private `@RestController` + `@RequiredArgsConstructor`.
+- Base path: `/api/v1/<plural>` (e.g. `/api/v1/orders`).
+- Thin: validate + authorize + call service. No JPA/Redis in controllers.
+
+## HTTP status
+
+| Action | Pattern |
+|--------|---------|
+| Create | `@ResponseStatus(CREATED)` + `ResponseEntity.created(URI.create(base + "/" + id)).build()` |
+| Update/Delete/Read/Auth flows | `@ResponseStatus(OK)` + `void` or DTO body |
+| Validation / business errors | throw `app.exception.*` (handler maps status) |
+
+No custom response envelope — return DTOs / `Page<>` directly.
+
+## Security annotations
+
+| Need | Use |
+|------|-----|
+| Feature permission | `@PreAuthorize("hasAuthority('ORDER_CREATE')")` — names match `GO_PERMISSION` |
+| Coarse admin | `@PreAuthorize("hasRole('ADMIN')")` — roles claim gets `ROLE_` prefix |
+| Self or admin | `@PreAuthorize("hasRole('ADMIN') or #username == authentication.name")` — see `UserController` |
+| Public auth routes | already `permitAll` under `/api/v1/auth/**` — no annotation required |
+
+Do not invent a second permission naming scheme; mirror `ARTICLE_READ|CREATE|UPDATE|DELETE`.
+
+## Paging
+
+- List endpoint: `GET .../paging`
+- `@PageableDefault(page = 0, size = 10, sort = "createdAt", direction = DESC)`
+- Return `Page<FeatureDTO>`
+
+## Body validation
+
+`@Valid @RequestBody` on write endpoints. Messages live on DTO fields.

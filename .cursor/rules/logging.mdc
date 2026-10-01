@@ -1,0 +1,11 @@
+---
+description: Slf4j logging levels and what never to log
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# logging
+
+Source of truth: `.agents/rules/logging.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.

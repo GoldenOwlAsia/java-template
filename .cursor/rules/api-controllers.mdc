@@ -1,0 +1,12 @@
+---
+description: REST controller conventions — status codes, PreAuthorize, paging
+globs:
+  - "**/controller/**/*.java"
+alwaysApply: false
+---
+
+# api-controllers
+
+Source of truth: `.agents/rules/api-controllers.mdc`
+
+Read that file completely and follow it. Do not improvise conflicting conventions.
