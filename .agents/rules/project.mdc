@@ -32,6 +32,7 @@ src/test/...                # mirror packages; profile test (H2, no Redis)
 4. After Java edits: `./mvnw spotless:apply`, then run the smallest relevant tests.
 5. Local API needs Postgres + Redis: `docker compose up -d app-postgres-db app-redis`.
 6. Adding a domain feature (`order`, …): use skill **add-feature** (`.agents/skills/add-feature`) and clone the `article` package.
+7. Refactor / dọn code / align conventions: use skill **refactor-code** (`.agents/skills/refactor-code`). Smallest diff; do not rewrite auth/Redis.
 
 ## Commands
 
