@@ -41,3 +41,4 @@ CI (`.github/workflows/ci.yml`): `spotless:check` then `./mvnw verify`.
 | `add-feature` | New domain package (clone `article`) |
 | `add-flyway-migration` | New `V{n}__*.sql` |
 | `add-mail-handler` | New Thymeleaf mail handler |
+| `refactor-code` | Align existing code with project rules (no behavior change) |

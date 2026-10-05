@@ -50,6 +50,7 @@ docker compose up -d app-postgres-db app-redis
 | New feature | `.agents/skills/add-feature/SKILL.md` |
 | New migration | `.agents/skills/add-flyway-migration/SKILL.md` |
 | New mail | `.agents/skills/add-mail-handler/SKILL.md` |
+| Refactor | `.agents/skills/refactor-code/SKILL.md` |
 
 ## Hard boundaries
 

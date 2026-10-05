@@ -10,21 +10,23 @@ description: >-
 
 # Add a feature package
 
-Clone the **`article`** feature as the structural reference. Do not invent a new layout.
+Clone the **`article`** feature as the **package layout and CRUD wiring**. Do not invent a new tree.
+
+Copy structure and neighbors (`UserService` author, MapStruct, tests). Do **not** copy article cache (`@Cacheable` / `@CacheEvict`, `CacheConstant`, `RedisCacheConfig`) unless the user asked for cache.
 
 Reference roots:
 
 - Main: `src/main/java/com/goldenowl/springboottemplate/article/`
 - Test: `src/test/java/com/goldenowl/springboottemplate/article/`
 
-Replace `article` / `Article` with the new name (e.g. `order` / `Order`).
+Replace `article` / `Article` with the new name (e.g. `product` / `Product`).
 
 ## 1. Confirm scope before coding
 
 Ask only if missing:
 
 - Resource name + API base path (default `/api/v1/<plural>`)
-- Fields / relations (e.g. Order → User)
+- Fields / relations (e.g. Product → User)
 - Whether permissions are needed (default yes, mirror `ARTICLE_*`)
 - Whether detail caching is needed (default no unless asked)
 
@@ -50,15 +52,15 @@ Tests (same packages under `src/test/java/...`):
 
 ## 3. Implement in this order
 
-1. **Flyway** — use skill **add-flyway-migration** (next `V{n}__*.sql`, `GO_*` table, soft-delete column, permission inserts). Never edit old versions or rely on `ddl-auto` outside tests.
-2. **Entity** — extend `BaseEntity`; add `@SoftDelete` like `ArticleEntity`. Default relations **LAZY**. Soft-deleted parent (like article author): `@NotFound(IGNORE)` — Hibernate **forces EAGER**, so do not also set `FetchType.LAZY` (see `ArticleEntity`).
-3. **Repository** — Spring Data JPA; add `@EntityGraph` for paging/detail if associations are fetched.
-4. **DTOs + Mapper** — MapStruct; `@NotBlank(message=...)` on save DTO; ignore `id`/`ol`/audit on entity maps.
-5. **Service** — interface + `@Service` `@Transactional` `@RequiredArgsConstructor` `@Slf4j` impl; `log.info` milestones; throw `app.exception.*`; never log secrets.
-6. **Controller** — `/api/v1/<plural>`; create → `201` + Location; `@PreAuthorize("hasAuthority('FEATURE_…')")`; `GET .../paging` with `@PageableDefault`.
-7. **Cache** — only if requested: `CacheConstant` + `@Cacheable`/`@CacheEvict`.
-8. **Security** — authenticated by default; only change `SecurityConfig` for public exceptions.
-9. **Tests** — mirror article tests; no real Redis/Postgres.
+1. **Flyway** — skill **add-flyway-migration**: next `V{n}__*.sql` with `GO_*` table **and** `GO_PERMISSION` / `GO_ROLE_PERMISSIONS` inserts. Article perms live in `V2` — do not edit `V2`/`V4`; never `ddl-auto` outside tests.
+2. **Entity** — extend `BaseEntity`; `@Table(name = "GO_…")`; `@SoftDelete`. Default relations **LAZY**. Soft-deleted parent (article `author`): `@NotFound(IGNORE)` + **EAGER** (Hibernate forces it — do not also set `LAZY`).
+3. **Repository** — Spring Data JPA; `@EntityGraph` on paging/detail like `findAll` / `findDetailedById`.
+4. **DTOs + Mapper** — MapStruct `@Mapper(uses = {UserMapper.class})` when flattening author; `@NotBlank(message=...)` on save DTO; ignore `id`/`ol`/audit on DTO → entity.
+5. **Service** — public interface + package-private `@Service` `@Transactional` `@RequiredArgsConstructor` `@Slf4j` impl. Set author via `AuthenticationUtils.getCurrentUsername()` + `UserService` like article. `log.info` milestones; `app.exception.*`; never log secrets.
+6. **Controller** — `/api/v1/<plural>`; create → `201` + Location; `@PreAuthorize("hasAuthority('<FEATURE>_READ|CREATE|UPDATE|DELETE')")`; `GET .../paging` + `@PageableDefault`.
+7. **Cache** — default **off**. Strip cache annotations from the article clone. Only if asked: `CacheConstant` + TTL in `RedisCacheConfig` + `@Cacheable`/`@CacheEvict`.
+8. **Security** — already authenticated; do not edit `SecurityConfig` unless the user wants public routes.
+9. **Tests** — clone `ArticleControllerTest` / `ArticleServiceImplTest`: `@WebMvcTest` + `@ActiveProfiles(TEST)` + `@Import({SecurityConfigTest.class, GlobalExceptionHandler.class})` + `@WithMockUser(authorities = {…})`. No real Redis/Postgres.
 
 ## 4. Do / don't
 
@@ -70,27 +72,50 @@ Tests (same packages under `src/test/java/...`):
 
 **Don't**
 
-- Put order/business rules into `app` or `auth`.
+- Put domain rules into `app` or `auth`.
 - Expose entities from controllers.
-- Add Redisson / new frameworks for a normal CRUD feature.
+- Copy article cache / Redisson / new frameworks for a normal CRUD feature.
+- Edit old Flyway versions or `SecurityConfig` / `RedisCacheConfig` without being asked.
 - Hand-edit huge unrelated files.
 
-## 5. Example: `order`
+## 5. Example: `product`
 
-User: “thêm feature order”
+User: “add feature product”
 
-Deliver:
+Assume unless they said otherwise:
 
-- Package `.../order/` with Order* types and `/api/v1/orders`
-- Flyway create `orders` (+ permission rows if needed)
-- Service/controller/tests modeled on `article`
-- Stop and ask before adding payment gateways, outbox, or Redis cache unless requested
+- `/api/v1/products`
+- Same shape as article (`title`, `content`, `author` → `UserEntity`) if they did not list fields
+- `PRODUCT_READ|CREATE|UPDATE|DELETE` — ADMIN all, USER `PRODUCT_READ` only
+- **No** cache, inventory, pricing, or extra packages
+
+Rename map (keep article wiring; drop cache):
+
+| From `article` | To `product` |
+|----------------|--------------|
+| `ArticleController` | `ProductController` — `/api/v1/products` |
+| `ArticleService` / `ArticleServiceImpl` | `ProductService` / `ProductServiceImpl` — **no** `@Cacheable` / `@CacheEvict` |
+| `ArticleRepository` | `ProductRepository` — keep `@EntityGraph` + `findDetailedById` |
+| `ArticleEntity` | `ProductEntity` — `@Table(name = "GO_PRODUCT")`, `@SoftDelete`, author `@NotFound` |
+| `ArticleDTO` / `DetailDTO` / `SaveDTO` | `ProductDTO` / `ProductDetailDTO` / `ProductSaveDTO` |
+| `ArticleMapper` | `ProductMapper` — `uses = UserMapper`, flatten `author.username` |
+| Controller/service tests | `ProductControllerTest` / `ProductServiceImplTest` — authorities `PRODUCT_*` |
+| `ARTICLE_*` | `PRODUCT_*` |
+
+Also clone (same classes, not renamed): `UserService` + `AuthenticationUtils` for current user as author.
+
+Flyway: **new** `V{n}__product.sql` (`GO_PRODUCT` like `V4` **plus** permission/role inserts; do not edit `V2`/`V4`).
+
+Leave untouched: `CacheConstant`, `RedisCacheConfig`, `SecurityConfig`.
+
+Stop and ask before cache, `permitAll`, or extra domains.
 
 ## 6. Done checklist
 
 - [ ] Package tree complete under `<feature>/`
-- [ ] Flyway migration added
-- [ ] Permissions seeded if using `@PreAuthorize`
-- [ ] Controller + service + tests exist
+- [ ] New Flyway version: table + permission seeds (old `V*` untouched)
+- [ ] `@PreAuthorize` names match seeded `GO_PERMISSION`
+- [ ] No cache/`SecurityConfig` changes unless requested
+- [ ] Controller + service + tests exist (WebMvcTest profile `test`)
 - [ ] `./mvnw spotless:apply`
-- [ ] `./mvnw -Dtest=<Feature>ControllerTest,<Feature>ServiceImplTest test` (or full `./mvnw test`)
+- [ ] `./mvnw -Dtest=<Feature>ControllerTest,<Feature>ServiceImplTest test`

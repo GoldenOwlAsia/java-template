@@ -19,6 +19,7 @@ Ignore `.cursor/` stubs for content — those exist for Cursor discovery and poi
 | Feature scaffold | `.agents/skills/add-feature/SKILL.md` |
 | Flyway / schema | `.agents/skills/add-flyway-migration/SKILL.md` |
 | Mail template | `.agents/skills/add-mail-handler/SKILL.md` |
+| Refactor | `.agents/skills/refactor-code/SKILL.md` |
 | Auth / Redis / JWT | `.agents/rules/auth-redis.mdc` |
 | Controllers | `.agents/rules/api-controllers.mdc` |
 | Exceptions | `.agents/rules/exceptions.mdc` |
@@ -33,6 +34,7 @@ Ignore `.cursor/` stubs for content — those exist for Cursor discovery and poi
 - Use `./mvnw` (wrapper).
 - After Java changes: `./mvnw spotless:apply`, then smallest `./mvnw -Dtest=… test`. CI uses `./mvnw verify`.
 - New CRUD feature → `.agents/skills/add-feature/SKILL.md` (clone `article`).
+- Refactor / align conventions → `.agents/skills/refactor-code/SKILL.md`.
 - Prefer editing only the touched feature package.
 
 ## Do not regress
