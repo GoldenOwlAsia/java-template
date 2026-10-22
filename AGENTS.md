@@ -3,7 +3,7 @@
 Shared entrypoint for AI coding agents (Cursor, Claude Code, Codex, etc.).
 
 **Canonical docs:** [`.agents/`](.agents/) — edit only there.  
-Cursor uses thin stubs under `.cursor/` that point at `.agents/` (no symlinks, no duplicated bodies).
+Cursor and Claude Code use thin stubs under `.cursor/` and `.claude/skills/` that point at `.agents/` (no symlinks, no duplicated bodies).
 
 Human runbook: [README.md](README.md).
 

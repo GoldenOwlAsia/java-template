@@ -10,11 +10,18 @@ Follow **`.agents/`** only (full rules + skills):
 2. [`.agents/README.md`](.agents/README.md)  
 3. Open the matching file under **`.agents/rules/`** or **`.agents/skills/`**
 
-Ignore `.cursor/` stubs for content — those exist for Cursor discovery and point back here.
+Ignore `.cursor/` and `.claude/skills/` stubs for content — those exist for tool discovery and point back here.
+
+Always-on rules (imported into context):
+
+@.agents/rules/project.mdc
+@.agents/rules/architecture.mdc
+
+`.claude/settings.json`: allows `./mvnw *`, denies reading `.env`, and a PostToolUse hook runs `spotless:apply` on each edited `.java` file.
 
 | When working on… | Open |
 |------------------|------|
-| Always | `.agents/rules/project.mdc`, `.agents/rules/architecture.mdc` |
+| Always (imported above) | `.agents/rules/project.mdc`, `.agents/rules/architecture.mdc` |
 | Java / MapStruct | `.agents/rules/java-spring.mdc` |
 | Feature scaffold | `.agents/skills/add-feature/SKILL.md` |
 | Flyway / schema | `.agents/skills/add-flyway-migration/SKILL.md` |

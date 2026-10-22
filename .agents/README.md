@@ -10,6 +10,8 @@
 
 .cursor/rules/*.mdc    ← stubs: same frontmatter + “read .agents/rules/…”
 .cursor/skills/*/SKILL.md  ← stubs: description + “read .agents/skills/…”
+.claude/skills/*/SKILL.md  ← same stubs for Claude Code skill discovery
+.claude/settings.json      ← Claude Code permissions + Spotless hook
 
 AGENTS.md / CLAUDE.md  ← entrypoints → .agents/
 ```

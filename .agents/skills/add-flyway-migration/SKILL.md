@@ -13,7 +13,7 @@ description: >-
 
 - Path: `src/main/resources/db/migration/`
 - Name: `V{n}__{snake_description}.sql` (double underscore)
-- `{n}` = highest existing `V*` + 1 (currently through **V8** — always re-check the folder)
+- `{n}` = highest existing `V*` + 1 — always list the folder first; never assume the latest number
 - **Never edit** applied migrations; always add a new version
 - One concern per file when practical (create table vs data fix vs permissions)
 
